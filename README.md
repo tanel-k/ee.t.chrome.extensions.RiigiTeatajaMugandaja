@@ -1,1 +1,0 @@
-# ee.t.chrome.extensions.RiigiTeatajaMugandaja

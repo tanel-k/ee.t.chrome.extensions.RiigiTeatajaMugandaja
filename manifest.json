@@ -1,0 +1,35 @@
+{
+  "name": "Riigi Teataja Mugandaja",
+  "version": "0.0.5",
+  "description": "",
+
+  "permissions": [
+    "tabs",
+    "browsingData",
+    "declarativeContent",
+    "https://www.riigiteataja.ee/*",
+    "http://www.riigiteataja.ee/*"
+  ],
+
+  "background": {
+    "scripts": [
+     "scripts/lib.js",
+     "background.js"
+    ],
+    "persistent": true
+  },
+
+  "content_scripts": [{
+    "matches": ["*://*.riigiteataja.ee/akt/*"],
+    "js": ["plugins/FreezeUI/freeze-ui.js", "scripts/prepare_revision_anchors.js"],
+    "css": ["plugins/FreezeUI/freeze-ui.css"]
+  }],
+
+  "icons": {
+    "16": "icons/icon.png",
+    "48": "icons/icon.png",
+    "128": "icons/icon.png"
+  },
+
+  "manifest_version": 2
+}
