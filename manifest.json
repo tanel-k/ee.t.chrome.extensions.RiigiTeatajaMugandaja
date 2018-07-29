@@ -1,11 +1,10 @@
 {
   "name": "Riigi Teataja Mugandaja",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "description": "",
 
   "permissions": [
     "tabs",
-    "browsingData",
     "declarativeContent",
     "https://www.riigiteataja.ee/*",
     "http://www.riigiteataja.ee/*"

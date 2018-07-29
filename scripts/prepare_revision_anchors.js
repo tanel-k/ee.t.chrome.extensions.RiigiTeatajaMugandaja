@@ -331,7 +331,7 @@ function main() {
       newAnchor.href = '#';
       newAnchor.id = '_chrome_ext_reason_anchor_'+i;
       newAnchor.target = '_blank';
-      newAnchor.textContent = 'Põhjendus';
+      newAnchor.textContent = 'Tekstid';
       newAnchor.setAttribute('revision-url', revisionUrl);
       newAnchor.addEventListener('click', function(e) {
         handleReasonClickEvt(e);
