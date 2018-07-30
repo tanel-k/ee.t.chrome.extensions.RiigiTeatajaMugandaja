@@ -17,7 +17,6 @@
           args: argObj,
           blocker: blocker,
           unfreeze: function() {
-            console.log('Removing', this.blocker);
             this.blocker.remove();
           }
         }

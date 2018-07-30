@@ -69,7 +69,19 @@ function handleReasonClickEvt(e) {
 
   var targetNode = e.target;
 
-  if (targetNode.getAttribute('is-expanded') === 'yes') {
+  if (targetNode.getAttribute('has-reason-table') === 'yes') {
+    var isExpanded = targetNode.getAttribute('is-expanded') === 'yes';
+    var reasonTableId = targetNode.getAttribute('reason-table-id');
+    var reasonTable = document.getElementById(reasonTableId);
+
+    if (isExpanded) {
+      reasonTable.style.display = 'none';
+      targetNode.setAttribute('is-expanded', 'no');
+    } else {
+      reasonTable.style.display = 'block';
+      targetNode.setAttribute('is-expanded', 'yes');
+    }
+
     return;
   }
 
@@ -228,11 +240,13 @@ function processReasonUrl(contextData) {
 
 function processReasonPageData(contextData) {
   var reasonPageData = contextData.reasonPageData;
+  var targetNode = contextData.targetNode;
   var containerDiv;
 
   if ('resultDiv' in contextData)
   {
     containerDiv = contextData.resultDiv.cloneNode(true);
+    containerDiv.id = targetNode.id + '_linked_reason_table';
   }
   else
   {
@@ -286,6 +300,7 @@ function processReasonPageData(contextData) {
 
     containerDiv = document.createElement('div');
     containerDiv.classList.add('reasonTable');
+    containerDiv.id = targetNode.id + '_linked_reason_table'
     var styleDiv = document.createElement('style');
     styleDiv.innerText = '\
       .reasonTable ul { margin: 0; }\
@@ -296,12 +311,15 @@ function processReasonPageData(contextData) {
     containerDiv.appendChild(textsTable);
   }
 
-  var targetNode = contextData.targetNode;
   var targetParent = targetNode.parentNode;
   var targetGrandparent = targetParent.parentNode;
 
+  containerDiv.style.display = 'block';
+
   targetGrandparent.insertBefore(containerDiv, targetParent.nextSibling);
   targetNode.setAttribute('is-expanded', 'yes');
+  targetNode.setAttribute('has-reason-table', 'yes');
+  targetNode.setAttribute('reason-table-id', containerDiv.id);
 
   var revisionId = contextData.revisionId;
   if (!(revisionId in CONTEXT_CACHE)) {
@@ -323,10 +341,7 @@ function main() {
     if (isRevisionLink(anchor)) {
       var revisionUrl = anchor.href;
 
-      // var sep = document.createElement('span');
-      // sep.textContent = '\u00a0|\u00a0';
       var sep = document.createTextNode('\u00a0|\u00a0');
-
       var newAnchor = document.createElement('a');
       newAnchor.href = '#';
       newAnchor.id = '_chrome_ext_reason_anchor_'+i;
