@@ -123,7 +123,7 @@ function createCaseLookupLink(nodeType, node, codeString, acronym) {
 
     if (match) {
       var numerationText = match[1];
-      textContent = textContent.replace(numerationText, '');
+      textContent = textContent.substring(numerationText.length);
       nextTextNode.textContent = textContent;
       lookupAnchor.textContent = numerationText;
       nextTextNode.parentNode.insertBefore(lookupAnchor, nextTextNode);
