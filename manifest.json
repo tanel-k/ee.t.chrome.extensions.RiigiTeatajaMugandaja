@@ -1,6 +1,6 @@
 {
   "name": "Riigi Teataja Mugandaja",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "",
 
   "permissions": [
@@ -24,7 +24,7 @@
       "plugins/FreezeUI/freeze-ui.js",
       "scripts/content-script-lib.js",
       "scripts/prepare-revision-anchors.js",
-      "prepare-case-lookup-anchors.js"
+      "scripts/prepare-case-lookup-anchors.js"
     ],
     "css": ["plugins/FreezeUI/freeze-ui.css"]
   }],

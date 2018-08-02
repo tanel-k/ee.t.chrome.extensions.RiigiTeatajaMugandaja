@@ -82,19 +82,56 @@ function createCaseLookupLink(nodeType, node, codeString, acronym) {
    var codeParts = parseCodeString(codeString);
    var caseLookupUrl = getCaseLookupUrl(acronym, codeParts.paragraphNr, codeParts.sectionNr, codeParts.itemNr);
 
+  var onClick = function(e) {
+    e.preventDefault();
+
+    var width = window.innerWidth * 0.66 ;
+    var height = width * (window.innerHeight / window.innerWidth);
+    var topOffset = ((window.innerHeight - height) / 2);
+    var leftOffset = ((window.innerWidth - width) / 2);
+
+    var strUrl = caseLookupUrl;
+    var windowName = 'CaseLookup'; // use '_blank' to open completely new window
+    var windowFeatures = 'width='+width+',height='+height+',top='+topOffset+',left='+leftOffset;
+
+    window.open(strUrl, windowName, windowFeatures);
+
+    return false;
+  };
+
+  var lookupAnchor = document.createElement('a');
+  lookupAnchor.href = caseLookupUrl;
+  lookupAnchor.target = '_blank';
+  lookupAnchor.onclick = onClick;
+
   switch (nodeType) {
-    case NodeTypes.PARAGRAPH:
-      var paragraphNode = node.previousSibling;
-      // Wrap paragraph <strong> with anchor
-      break;
-    case NodeTypes.SECTION:
-    case NodeTypes.ITEM:
-      var nextTextNode = node.nextSibling;
-      // Remove 1) or (1) from text content
-      // Prepend anchor node with 1) or (1)
-      break;
-    default:
-      break;
+  case NodeTypes.PARAGRAPH:
+    var paragraphNode = node.previousSibling;
+    var paragraphTextNode = paragraphNode.firstChild;
+
+    lookupAnchor.textContent = paragraphTextNode.textContent;
+
+    paragraphTextNode.parentNode.insertBefore(lookupAnchor, paragraphTextNode);
+    paragraphTextNode.parentNode.removeChild(paragraphTextNode);
+    break;
+  case NodeTypes.SECTION:
+  case NodeTypes.ITEM:
+    var nextTextNode = node.nextSibling;
+    var textContent = nextTextNode.textContent;
+    var numerationRegex = /^(\([0-9]+\)|[0-9]+\))/i;
+    var match = numerationRegex.exec(textContent);
+
+    if (match) {
+      var numerationText = match[1];
+      textContent = textContent.replace(numerationText, '');
+      nextTextNode.textContent = textContent;
+      lookupAnchor.textContent = numerationText;
+      nextTextNode.parentNode.insertBefore(lookupAnchor, nextTextNode);
+    }
+
+    break;
+  default:
+    break;
   }
 }
 
