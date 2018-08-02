@@ -12,7 +12,7 @@
 
   "background": {
     "scripts": [
-     "scripts/lib.js",
+     "scripts/background-lib.js",
      "background.js"
     ],
     "persistent": true
@@ -20,7 +20,12 @@
 
   "content_scripts": [{
     "matches": ["*://*.riigiteataja.ee/akt/*"],
-    "js": ["plugins/FreezeUI/freeze-ui.js", "scripts/prepare_revision_anchors.js"],
+    "js": [
+      "plugins/FreezeUI/freeze-ui.js",
+      "scripts/content-script-lib.js",
+      "scripts/prepare-revision-anchors.js",
+      "prepare-case-lookup-anchors.js"
+    ],
     "css": ["plugins/FreezeUI/freeze-ui.css"]
   }],
 
