@@ -53,7 +53,7 @@ function getCaseLookupUrl(acronym, paragraphNr, sectionNr, itemNr) {
   }
 
   params['tekst'] = textQuery;
-  return buildUrl(rootUrl, path, params);
+  return { query: textQuery, url: buildUrl(rootUrl, path, params) };
 }
 
 var NodeTypes = {
@@ -63,24 +63,30 @@ var NodeTypes = {
 }
 
 function parseCodeString(codeString) {
-  var result = {};
+  var result = {nodeType: undefined};
   var keys = ['paragraphNr', 'sectionNr', 'itemNr'];
-  var regexes = [/\para([0-9]+)/i, /\lg([0-9]+)/i, /\p([0-9]+)/i];
+  var regexes = [/para([0-9]+)/i, /lg([0-9]+)/i, /p([0-9]+)/i];
+  var types = [NodeTypes.PARAGRAPH, NodeTypes.SECTION, NodeTypes.ITEM];
 
   for (var i = 0; i < regexes.length; i++) {
     var match = regexes[i].exec(codeString);
     if (!match)
       break;
+
+    result['nodeType'] = types[i];
     result[keys[i]] = parseInt(match[1]);
   }
 
   return result;
 }
 
-function createCaseLookupLink(nodeType, node, codeString, acronym) {
-  // TODO: unfinished
-   var codeParts = parseCodeString(codeString);
-   var caseLookupUrl = getCaseLookupUrl(acronym, codeParts.paragraphNr, codeParts.sectionNr, codeParts.itemNr);
+function createCaseLookupLink(acronym, node, codeData) {
+  var codeParts = typeof codeData === 'string'
+    ? parseCodeString(codeData)
+    : codeData;
+  var caseLookupData = getCaseLookupUrl(acronym, codeParts.paragraphNr, codeParts.sectionNr, codeParts.itemNr);
+  var caseLookupUrl = caseLookupData.url;
+  var hoverLabel = caseLookupData.query;
 
   var onClick = function(e) {
     e.preventDefault();
@@ -103,8 +109,9 @@ function createCaseLookupLink(nodeType, node, codeString, acronym) {
   lookupAnchor.href = caseLookupUrl;
   lookupAnchor.target = '_blank';
   lookupAnchor.onclick = onClick;
+  lookupAnchor.title = hoverLabel;
 
-  switch (nodeType) {
+  switch (codeParts.nodeType) {
   case NodeTypes.PARAGRAPH:
     var paragraphNode = node.previousSibling;
     var paragraphTextNode = paragraphNode.firstChild;
@@ -136,26 +143,73 @@ function createCaseLookupLink(nodeType, node, codeString, acronym) {
 }
 
 function createCaseLookupLinks(acronym) {
-  var baseParagraphNodes = selectNodes("//a[starts-with(@name, 'para')][not(contains(@name, 'lg'))]");
-  for (var i = 0; i < baseParagraphNodes.snapshotLength; i++) {
-    var paragraphNode = baseParagraphNodes.snapshotItem(i);
-    var paragraphCode = paragraphNode.name;
-    createCaseLookupLink(NodeTypes.PARAGRAPH, paragraphNode, paragraphCode, acronym);
+  var lawNodes = selectNodes("//a[starts-with(@name, 'para')]");
+  for (var i = 0; i < lawNodes.snapshotLength; i++) {
+    var lawNode = lawNodes.snapshotItem(i);
+    var lawCode = lawNode.name;
+    createCaseLookupLink(acronym, lawNode, lawCode);
+  }
+}
 
-    var sectionNodes = selectNodes("//a[starts-with(@name, '"+paragraphCode+"')][@name != '"+paragraphCode+"'][not(contains(substring-after(@name, 'para'), 'p'))]");
-    for (var j = 0; j < sectionNodes.snapshotLength; j++) {
-      var sectionNode = sectionNodes.snapshotItem(j);
-      var sectionCode = sectionNode.name;
-      createCaseLookupLink(NodeTypes.SECTION, sectionNode, sectionCode, acronym);
+function createCaseLookupLinksForOldLayout(acronym) {
+  var headerNodes = selectNodes("//h3[count(.//a[starts-with(@name, 'para')]) > 0]");
+  var createCaseLookupLinkArgs = [];
 
-      var itemNodes = selectNodes("//a[starts-with(@name, '"+sectionCode+"')][@name != '"+sectionCode+"']");
-      for (var k = 0; k < itemNodes.snapshotLength; k++) {
-        var itemNode = itemNodes.snapshotItem(k);
-        var itemCode = itemNode.name;
-        createCaseLookupLink(NodeTypes.ITEM, itemNode, itemCode, acronym);
+  for (var i = 0; i < headerNodes.snapshotLength; i++) {
+    var headerNode = headerNodes.snapshotItem(i);
+    var paragraphNode = selectSingleNode("./a[starts-with(@name, 'para')]", document, headerNode);
+    var regex = /§ ([0-9]+)\./i;
+    var match = regex.exec(paragraphNode.previousSibling.textContent);
+    var paragraphNr;
+    if (!match) {
+      continue;
+    }
+    paragraphNr = match[1];
+
+    createCaseLookupLinkArgs.push([acronym, paragraphNode, {
+      nodeType: NodeTypes.PARAGRAPH,
+      paragraphNr: paragraphNr}]);
+
+    var sectionNr = 1;
+    var pNode = headerNode.nextSibling;
+    while (pNode && pNode.nodeName === 'P') {
+      var sectionNode = pNode.firstChild;
+
+      if (!sectionNode) {
+        break;
       }
+
+      createCaseLookupLinkArgs.push([acronym, sectionNode, {
+        nodeType: NodeTypes.SECTION,
+        paragraphNr: paragraphNr,
+        sectionNr: sectionNr}]);
+
+      var itemNodes = selectNodes("./a[string-length(@name) = 0][string-length(@href) = 0][string-length(text()) = 1]", document, pNode);
+      var itemNr = 1;
+      for (var j = 0; j < itemNodes.snapshotLength; j++) {
+        var itemNode = itemNodes.snapshotItem(j);
+
+        createCaseLookupLinkArgs.push([acronym, itemNode, {
+          nodeType: NodeTypes.ITEM,
+          paragraphNr: paragraphNr,
+          sectionNr: sectionNr,
+          itemNr: itemNr}]);
+
+        itemNr = itemNr + 1;
+      }
+
+      sectionNr = sectionNr + 1;
+      pNode = pNode.nextSibling;
     }
   }
+
+  for (var i = 0; i < createCaseLookupLinkArgs.length; i++) {
+    createCaseLookupLink.apply(this, createCaseLookupLinkArgs[i]);
+  }
+}
+
+function hasOldLayout() {
+  return typeof selectSingleNode("//a[starts-with(@name, 'lg')]") === 'object';
 }
 
 function main() {
@@ -166,7 +220,12 @@ function main() {
     return;
   }
 
-  createCaseLookupLinks(acronym);
+  if (!hasOldLayout()) {
+    createCaseLookupLinks(acronym);
+  } else {
+    console.warn('Old law layout detected!');
+    createCaseLookupLinksForOldLayout(acronym);
+  }
 }
 
 main();
